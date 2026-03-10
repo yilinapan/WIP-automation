@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import datetime
+import urllib.parse
 from io import BytesIO
 from pathlib import Path
 from typing import List, Optional
@@ -25,6 +27,11 @@ app = FastAPI(
 @app.get("/health")
 def health_check() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/wake")
+def wake() -> dict:
+    return {"status": "warm", "timestamp": datetime.datetime.utcnow().isoformat()}
 
 
 @app.post("/convert")
@@ -65,10 +72,11 @@ async def convert_wip_to_sticker(
         # 產生輸出檔名（沿用原本的命名邏輯）
         output_name = parse_output_filename_from_input(file.filename)
 
+        encoded_name = urllib.parse.quote(output_name)
         return Response(
             content=excel_bytes,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f'attachment; filename="{output_name}"'},
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_name}"},
         )
     except HTTPException:
         # 已經是我們主動拋出的錯誤，直接往外丟
